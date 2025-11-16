@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protocolo INC: El Auditor de Élite</title>
+    <style>
+        /* * ESTÉTICA NEÓN-NOIR EDUCATIVO 
+         * Variables CSS para control temático
+         */
+        :root {
+            --bg-dark: #0f172a;
+            --bg-panel: rgba(30, 41, 59, 0.7);
+            --neon-cyan: #00f3ff;
+            --neon-green: #39ff14;
+            --neon-red: #ff073a;
+            --neon-purple: #bc13fe;
+            --text-main: #e2e8f0;
+            --glass-border: 1px solid rgba(255, 255, 255, 0.1);
+            --font-main: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none; /* Evitar selección para sensación de app nativa */
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: var(--text-main);
+            font-family: var(--font-main);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* EL MONOLITO: Contenedor 16:9 */
+        #course-container {
+            width: 100vw;
+            max-width: 1600px;
+            aspect-ratio: 16/9;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(0, 243, 255, 0.05) 0%, transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(188, 19, 254, 0.05) 0%, transparent 25%);
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 243, 255, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* UTILIDADES GLASSMORFISM */
+        .glass-panel {
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: var(--glass-border);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .btn-neon {
+            background: transparent;
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 4px;
+            letter-spacing: 1px;
+            box-shadow: 0 0 5px var(--neon-cyan);
+        }
+
+        .btn-neon:hover {
+            background: var(--neon-cyan);
+            color: #000;
+            box-shadow: 0 0 20px var(--neon-cyan);
+        }
+
+        .btn-neon.secondary {
+            border-color: var(--neon-purple);
+            color: var(--neon-purple);
+            box-shadow: 0 0 5px var(--neon-purple);
+        }
+        
+        .btn-neon.secondary:hover {
+            background: var(--neon-purple);
+            color: #fff;
+            box-shadow: 0 0 20px var(--neon-purple);
+        }
+
+        /* HUD */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none; /* Click through */
+        }
+
+        .xp-container {
+            width: 300px;
+            height: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid var(--neon-cyan);
+            position: relative;
+        }
+
+        #xp-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--neon-cyan);
+            box-shadow: 0 0 10px var(--neon-cyan);
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .xp-text {
+            color: var(--neon-cyan);
+            font-weight: bold;
+            margin-left: 10px;
+            text-shadow: 0 0 5px var(--neon-cyan);
+        }
+
+        /* PANTALLAS */
+        .screen {
+            width: 100%;
+            height: 100%;
+            display: none; /* Oculto por defecto */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 60px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* INPUTS */
+        input[type="text"] {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--neon-cyan);
+            color: #fff;
+            padding: 15px;
+            font-size: 1.2rem;
+            border-radius: 8px;
+            outline: none;
+            text-align: center;
+            width: 300px;
+            margin-bottom: 20px;
+        }
+
+        /* TARJETAS ACTIVE RECALL */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            width: 100%;
+        }
+
+        .recall-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--neon-purple);
+            height: 200px;
+            perspective: 1000px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .recall-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        .recall-card.flipped .recall-inner {
+            transform: rotateY(180deg);
+        }
+
+        .recall-front, .recall-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 10px;
+        }
+
+        .recall-front {
+            color: var(--neon-cyan);
+        }
+
+        .recall-back {
+            background: var(--neon-purple);
+            color: #fff;
+            transform: rotateY(180deg);
+            font-size: 0.9rem;
+        }
+
+        /* VIDEO QUIZ */
+        #video-container {
+            width: 80%;
+            height: 60%;
+            position: relative;
+            border: 2px solid var(--neon-cyan);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.2);
+        }
+        
+        .quiz-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+
+        /* DRAG AND DROP STYLES */
+        .drop-zone {
+            border: 2px dashed var(--neon-cyan);
+            padding: 15px;
+            margin: 10px;
+            min-height: 60px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .drop-zone.correct { border-color: var(--neon-green); background: rgba(57, 255, 20, 0.1); }
+        .drop-zone.incorrect { border-color: var(--neon-red); background: rgba(255, 7, 58, 0.1); }
+
+        .draggable {
+            background: var(--neon-purple);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: grab;
+            margin: 5px;
+            display: inline-block;
+        }
+
+        /* TOAST NOTIFICATION */
+        #toast-container {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 200;
+        }
+
+        .toast {
+            background: rgba(0, 0, 0, 0.8);
+            border-left: 4px solid var(--neon-green);
+            color: #fff;
+            padding: 15px 25px;
+            border-radius: 4px;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* LOOT BOX */
+        #loot-modal {
+            position: absolute;
+            top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+        }
+        
+        .loot-box-svg { width: 200px; height: 200px; animation: pulse 1s infinite alternate; }
+
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.05); filter: drop-shadow(0 0 15px var(--neon-cyan)); } }
+
+        /* BOSS BATTLE */
+        .boss-mode {
+            background: radial-gradient(circle, #3a0000 0%, #000000 100%);
+        }
+        
+        .question-container {
+            width: 70%;
+            text-align: center;
+        }
+        
+        .option-btn {
+            width: 100%;
+            margin: 10px 0;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid #555;
+            color: white;
+            padding: 15px;
+            cursor: pointer;
+            text-align: left;
+            transition: 0.2s;
+        }
+        
+        .option-btn:hover { background: rgba(255,255,255,0.2); }
+        
+    </style>
+</head>
+<body>
+
+<div id="course-container">
+    
+    <div id="hud">
+        <div style="display: flex; align-items: center;">
+            <svg width="40" height="40" viewBox="0 0 100 100" style="margin-right: 15px;">
+                <polygon points="50,5 95,25 95,75 50,95 5,75 5,25" fill="none" stroke="#00f3ff" stroke-width="2"/>
+                <circle cx="50" cy="50" r="20" fill="#00f3ff" opacity="0.5"/>
+            </svg>
+            <div class="xp-container">
+                <div id="xp-bar"></div>
+            </div>
+            <span id="xp-text" class="xp-text">0 XP</span>
+        </div>
+        
+        <div id="menu-btn" style="color: var(--neon-cyan); cursor: pointer; font-size: 24px;">☰</div>
+    </div>
+
+    <div id="screen-login" class="screen active">
+        <svg width="150" height="150" viewBox="0 0 200 200" style="margin-bottom: 30px;">
+            <defs>
+                <filter id="glow">
+                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>
+            <path d="M100,20 L180,60 L180,140 L100,180 L20,140 L20,60 Z" fill="none" stroke="#00f3ff" stroke-width="3" filter="url(#glow)"/>
+            <path d="M100,40 L160,70 L160,130 L100,160 L40,130 L40,70 Z" fill="none" stroke="#bc13fe" stroke-width="2"/>
+            <circle cx="100" cy="100" r="10" fill="#fff" filter="url(#glow)">
+                <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/>
+            </circle>
+        </svg>
+        <h1 style="font-size: 3rem; margin-bottom: 10px; text-shadow: 0 0 10px var(--neon-cyan);">PROTOCOLO <span style="color: var(--neon-cyan);">INC</span></h1>
+        <p style="margin-bottom: 40px; color: #aaa;">CODIGO DE AUDITOR DE ÉLITE ISO 9001</p>
+        
+        <input type="text" id="agent-name" placeholder="NOMBRE DEL AGENTE" autocomplete="off">
+        <button class="btn-neon" onclick="startGame()">INICIAR MISIÓN</button>
+    </div>
+
+    <div id="screen-intro" class="screen">
+        <div class="glass-panel" style="max-width: 800px; text-align: center;">
+            <h2 style="color: var(--neon-green);">LA LLAMADA A LA AVENTURA</h2>
+            <p style="font-size: 1.2rem; line-height: 1.6;">
+                Agente <span id="display-name" style="color: var(--neon-cyan);"></span>, la mayoría de los auditores actúan como policías de tráfico: multan y se van.
+                <br><br>
+                Tu misión es diferente. Debes convertirte en un <strong>Socio Estratégico</strong>.
+                Aprenderás a transformar un simple "Informe de No Conformidad" en una herramienta de inteligencia de negocios.
+            </p>
+            
+            <div style="display: flex; justify-content: space-around; margin: 30px 0;">
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem;">👁️</div>
+                    <p>Identificar los 3 Escenarios</p>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem;">📝</div>
+                    <p>Dominar la Estructura INC</p>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-size: 2rem;">🧠</div>
+                    <p>Mindset "¿Y qué?"</p>
+                </div>
+            </div>
+
+            <button class="btn-neon" onclick="GameEngine.navigate('activation')">ACEPTAR DESAFÍO</button>
+        </div>
+    </div>
+
+    <div id="screen-activation" class="screen">
+        <h2>RITO DE INICIACIÓN: SINCRONIZACIÓN DE DATOS</h2>
+        <p>Arrastra el concepto a su definición correcta para activar el sistema.</p>
+        
+        <div style="display: flex; gap: 20px; width: 90%; height: 60%;">
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 10px;">
+                <div class="draggable" draggable="true" data-id="inc">No Conformidad</div>
+                <div class="draggable" draggable="true" data-id="evidencia">Evidencia Objetiva</div>
+                <div class="draggable" draggable="true" data-id="defecto">Defecto</div>
+            </div>
+            
+            <div style="flex: 2; display: flex; flex-direction: column; gap: 10px;">
+                <div class="drop-zone" data-match="inc">Incumplimiento de un requisito (ISO 9000:2005).</div>
+                <div class="drop-zone" data-match="evidencia">Datos que respaldan la existencia o veracidad de algo.</div>
+                <div class="drop-zone" data-match="defecto">Incumplimiento relacionado con el uso esperado por el cliente.</div>
+            </div>
+        </div>
+        <button id="btn-act-next" class="btn-neon" style="margin-top: 20px; opacity: 0.5; pointer-events: none;" onclick="GameEngine.navigate('modules')">CONTINUAR</button>
+    </div>
+
+    <div id="screen-modules" class="screen">
+        <h2 style="margin-bottom: 30px;">LAS CÁMARAS DEL CONOCIMIENTO</h2>
+        <p style="margin-bottom: 20px;">Haz clic en las tarjetas para descifrar el código (Gana XP).</p>
+        
+        <div class="card-grid">
+            <div class="recall-card" onclick="GameEngine.flipCard(this)">
+                <div class="recall-inner">
+                    <div class="recall-front">
+                        <h3>Los 3 Escenarios</h3>
+                        <p>(Intención, Implantación, Eficacia)</p>
+                    </div>
+                    <div class="recall-back">
+                        <p><strong>Intención:</strong> No se consideró el requisito (Diseño).<br>
+                        <strong>Implantación:</strong> La práctica difiere del papel.<br>
+                        <strong>Eficacia:</strong> Se cumple el papel, pero no se logra el resultado.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="recall-card" onclick="GameEngine.flipCard(this)">
+                <div class="recall-inner">
+                    <div class="recall-front">
+                        <h3>La Pregunta "¿Y QUÉ?"</h3>
+                    </div>
+                    <div class="recall-back">
+                        <p>La herramienta para conectar el hallazgo técnico con el impacto en el negocio.<br>
+                        Transforma "Falta un papel" en "Riesgo financiero/operativo".</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="recall-card" onclick="GameEngine.flipCard(this)">
+                <div class="recall-inner">
+                    <div class="recall-front">
+                        <h3>Estructura del INC</h3>
+                        <p>(3 Partes)</p>
+                    </div>
+                    <div class="recall-back">
+                        <p>1. <strong>Declaración:</strong> Qué falló.<br>
+                        2. <strong>Evidencia:</strong> Hechos (Qué, Cuándo, Dónde, Cuánto).<br>
+                        3. <strong>Requisito:</strong> Norma o Procedimiento incumplido.</p>
+                    </div>
+                </div>
+            </div>
+            
+             <div class="recall-card" onclick="GameEngine.flipCard(this)">
+                <div class="recall-inner">
+                    <div class="recall-front">
+                        <h3>Evidencia Objetiva</h3>
+                        <p>Características Clave</p>
+                    </div>
+                    <div class="recall-back">
+                        <p>Basada en hechos, Precisa, Objetiva, Trazable y Concisa.<br>
+                        Cualquier otro auditor debería llegar a la misma conclusión.</p>
+                    </div>
+                </div>
+            </div>
+
+             <div class="recall-card" onclick="GameEngine.flipCard(this)">
+                <div class="recall-inner">
+                    <div class="recall-front">
+                        <h3>El Auditor "Espejo"</h3>
+                    </div>
+                    <div class="recall-back">
+                        <p>No juzgas, reflejas la realidad.<br>
+                        "No es una multa, es una oportunidad de mejora no descubierta".</p>
+                    </div>
+                </div>
+            </div>
+            
+             <div class="recall-card" onclick="GameEngine.flipCard(this)">
+                <div class="recall-inner">
+                    <div class="recall-front">
+                        <h3>Oportunidad de Mejora (ODM)</h3>
+                    </div>
+                    <div class="recall-back">
+                        <p>Diferente a No Conformidad.<br>
+                        No incumple un requisito, pero sugiere una forma de optimizar o prevenir riesgos.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <button class="btn-neon" style="margin-top: 30px;" onclick="GameEngine.navigate('videoquiz')">ACCEDER AL ORÁCULO</button>
+    </div>
+
+    <div id="screen-videoquiz" class="screen">
+        <h2>EL ORÁCULO INTERACTIVO</h2>
+        <p>Analiza la transmisión. El sistema se pausará para verificar tu atención.</p>
+        
+        <div id="video-container">
+            <div id="player"></div>
+            
+            <div id="quiz-overlay" class="quiz-overlay">
+                <div class="glass-panel" style="width: 60%; text-align: center;">
+                    <h3 id="vq-question" style="color: var(--neon-cyan);">Pregunta</h3>
+                    <div id="vq-options" style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                        </div>
+                </div>
+            </div>
+        </div>
+        <button id="btn-skip-video" class="btn-neon secondary" style="margin-top: 10px; font-size: 0.8rem;" onclick="GameEngine.navigate('gamemap')">SALTO DE EMERGENCIA (DEBUG)</button>
+    </div>
+
+    <div id="screen-gamemap" class="screen">
+        <h2>LA SENDA DEL DOMINIO</h2>
+        <div style="position: relative; width: 80%; height: 60%; margin-top: 20px;">
+            <svg width="100%" height="100%" viewBox="0 0 800 400">
+                <path d="M100,200 Q250,50 400,200 T700,200" fill="none" stroke="#333" stroke-width="5" />
+                <path id="progress-path" d="M100,200 Q250,50 400,200 T700,200" fill="none" stroke="var(--neon-cyan)" stroke-width="5" stroke-dasharray="1000" stroke-dashoffset="1000"/>
+                
+                <g class="map-node" onclick="GameEngine.triggerMapEvent(1)" style="cursor: pointer;">
+                    <circle cx="100" cy="200" r="30" fill="#0f172a" stroke="var(--neon-cyan)" stroke-width="3"/>
+                    <text x="100" y="205" text-anchor="middle" fill="white" font-size="12">RESUMEN</text>
+                </g>
+
+                <g class="map-node" id="node-2" onclick="GameEngine.triggerMapEvent(2)" style="cursor: pointer; opacity: 0.5;">
+                    <circle cx="400" cy="200" r="30" fill="#0f172a" stroke="var(--neon-purple)" stroke-width="3"/>
+                    <text x="400" y="205" text-anchor="middle" fill="white" font-size="12">CASO</text>
+                </g>
+
+                <g class="map-node" id="node-3" onclick="GameEngine.triggerMapEvent(3)" style="cursor: pointer; opacity: 0.5;">
+                    <circle cx="700" cy="200" r="30" fill="#0f172a" stroke="var(--neon-red)" stroke-width="3"/>
+                    <text x="700" y="205" text-anchor="middle" fill="white" font-size="12">BOSS</text>
+                </g>
+            </svg>
+            
+            <div id="map-modal" class="glass-panel" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 60%; display: none; z-index: 50;">
+                <h3 id="map-title">Título</h3>
+                <div id="map-content">Contenido</div>
+                <button class="btn-neon" onclick="document.getElementById('map-modal').style.display='none'" style="margin-top: 15px;">CERRAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="screen-boss" class="screen boss-mode">
+        <h1 style="color: var(--neon-red); text-shadow: 0 0 20px var(--neon-red);">EL CRISOL FINAL</h1>
+        <p>Demuestra tu valía. 80% requerido para certificar.</p>
+        
+        <div id="boss-question-area" class="question-container glass-panel">
+            </div>
+    </div>
+
+    <div id="screen-hero" class="screen">
+        <svg width="100" height="100" viewBox="0 0 100 100">
+            <polygon points="50,5 20,95 95,35 5,35 80,95" fill="none" stroke="var(--neon-green)" stroke-width="2"/>
+        </svg>
+        <h1 style="color: var(--neon-green);">MISIÓN CUMPLIDA</h1>
+        <div class="glass-panel" style="text-align: center; width: 50%;">
+            <h2>AGENTE CERTIFICADO</h2>
+            <h3 id="cert-name" style="color: var(--neon-cyan);">NOMBRE</h3>
+            <p>XP FINAL: <span id="cert-xp">0</span></p>
+            <p>Has demostrado que la auditoría no es buscar culpables, sino construir valor.</p>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <div id="loot-modal">
+        <div style="text-align: center;">
+            <svg class="loot-box-svg" viewBox="0 0 100 100">
+                <rect x="20" y="40" width="60" height="40" fill="none" stroke="var(--neon-cyan)" stroke-width="2"/>
+                <path d="M20,40 L35,20 L85,20 L100,40" fill="none" stroke="var(--neon-cyan)" stroke-width="2"/>
+                <circle cx="60" cy="40" r="5" fill="var(--neon-green)"/>
+            </svg>
+            <h2 style="color: #fff;">¡RECOMPENSA DESBLOQUEADA!</h2>
+            <p id="loot-text" style="color: var(--neon-cyan); font-size: 1.5rem;"></p>
+            <button class="btn-neon" onclick="document.getElementById('loot-modal').style.display='none'">EQUIPAR</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+// --- CEREBRO CENTRAL (STATE) ---
+const CourseState = {
+    userName: "",
+    totalXP: 0,
+    currentScreen: "screen-login",
+    unlockedModules: ["screen-login"],
+    mapProgress: 0,
+    videoPoints: [],
+    inventory: []
+};
+
+// --- MOTOR DE AUDIO (WEB AUDIO API) ---
+const AudioEngine = {
+    ctx: new (window.AudioContext || window.webkitAudioContext)(),
+    
+    playTone: function(type) {
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        
+        const now = this.ctx.currentTime;
+        
+        if (type === 'success') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(500, now);
+            osc.frequency.exponentialRampToValueAtTime(1000, now + 0.1);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+        } else if (type === 'error') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.linearRampToValueAtTime(100, now + 0.2);
+            gain.gain.setValueAtTime(0.1, now);
+            gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+            osc.start(now);
+            osc.stop(now + 0.2);
+        } else if (type === 'xp') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(800, now);
+            osc.frequency.setValueAtTime(1200, now + 0.05);
+            gain.gain.setValueAtTime(0.05, now);
+            gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+        }
+    }
+};
+
+// --- GAME ENGINE ---
+const GameEngine = {
+    
+    init: function() {
+        // Recuperar persistencia
+        const saved = localStorage.getItem('INC_CourseState');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            CourseState.userName = parsed.userName || "";
+            CourseState.totalXP = parsed.totalXP || 0;
+            // No restauramos pantalla exacta para evitar bloqueos, vamos al menu o intro
+            if(CourseState.userName) this.navigate('intro');
+        }
+        this.updateHUD();
+    },
+
+    save: function() {
+        localStorage.setItem('INC_CourseState', JSON.stringify(CourseState));
+        this.updateHUD();
+    },
+
+    updateHUD: function() {
+        document.getElementById('xp-bar').style.width = Math.min(CourseState.totalXP, 100) + '%';
+        document.getElementById('xp-text').innerText = CourseState.totalXP + ' XP';
+        if(CourseState.userName) document.getElementById('display-name').innerText = CourseState.userName;
+    },
+
+    navigate: function(screenId) {
+        // Ocultar todas
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        // Mostrar target
+        const target = document.getElementById('screen-' + screenId);
+        if(target) target.classList.add('active');
+        
+        CourseState.currentScreen = screenId;
+        
+        // Lógica específica de carga
+        if(screenId === 'videoquiz' && !window.YT) {
+            loadYouTubeAPI();
+        }
+        
+        this.save();
+    },
+
+    addXP: function(amount, msg) {
+        CourseState.totalXP += amount;
+        AudioEngine.playTone('xp');
+        this.showToast(`+${amount} XP: ${msg}`);
+        this.save();
+        
+        // Loot box chance (10% de probabilidad cada 50XP)
+        if (CourseState.totalXP % 50 === 0 && Math.random() > 0.1) {
+            this.triggerLootBox();
+        }
+    },
+
+    showToast: function(msg) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerText = msg;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 3000);
+    },
+
+    triggerLootBox: function() {
+        const modal = document.getElementById('loot-modal');
+        const text = document.getElementById('loot-text');
+        const rewards = ["Insignia: Ojo de Águila", "Rango: Auditor Junior", "Item: Lupa de Neón", "Dato: ISO 19011 Desbloqueado"];
+        text.innerText = rewards[Math.floor(Math.random() * rewards.length)];
+        modal.style.display = 'flex';
+        AudioEngine.playTone('success');
+    },
+
+    flipCard: function(el) {
+        if (!el.classList.contains('flipped')) {
+            el.classList.add('flipped');
+            this.addXP(5, "Concepto Revelado");
+        }
+    },
+    
+    // Logica del Mapa
+    triggerMapEvent: function(nodeId) {
+        const modal = document.getElementById('map-modal');
+        const title = document.getElementById('map-title');
+        const content = document.getElementById('map-content');
+        
+        if (nodeId === 1) {
+            title.innerText = "NODO 1: SÍNTESIS";
+            content.innerHTML = `<p>Selecciona la verdad absoluta:</p>
+                <button class="btn-neon" style="width:100%; margin:5px;" onclick="GameEngine.mapAnswer(false)">Una NC es un error personal.</button>
+                <button class="btn-neon" style="width:100%; margin:5px;" onclick="GameEngine.mapAnswer(true)">Una NC es un incumplimiento de requisito.</button>`;
+            modal.style.display = 'block';
+        } else if (nodeId === 2) {
+            if (CourseState.mapProgress < 1) { GameEngine.showToast("¡Bloqueado! Completa el Nodo 1"); return; }
+            title.innerText = "NODO 2: ESCENARIO";
+            content.innerHTML = `<p>Caso: Un operario no usa gorro. El procedimiento lo exige. ¿Qué categoría es?</p>
+                <button class="btn-neon" style="width:100%; margin:5px;" onclick="GameEngine.mapAnswer(true)">Implantación</button>
+                <button class="btn-neon" style="width:100%; margin:5px;" onclick="GameEngine.mapAnswer(false)">Intención</button>`;
+            modal.style.display = 'block';
+        } else if (nodeId === 3) {
+             if (CourseState.mapProgress < 2) { GameEngine.showToast("¡Bloqueado! Completa el Nodo 2"); return; }
+             this.navigate('boss');
+        }
+    },
+    
+    mapAnswer: function(isCorrect) {
+        document.getElementById('map-modal').style.display = 'none';
+        if (isCorrect) {
+            this.addXP(20, "Nodo Conquistado");
+            CourseState.mapProgress++;
+            // Visual unlock
+            if(CourseState.mapProgress === 1) {
+                document.getElementById('node-2').style.opacity = '1'; 
+                document.getElementById('progress-path').style.strokeDashoffset = '500';
+            }
+            if(CourseState.mapProgress === 2) {
+                document.getElementById('node-3').style.opacity = '1';
+                document.getElementById('progress-path').style.strokeDashoffset = '0';
+            }
+        } else {
+            this.showToast("Incorrecto. Inténtalo de nuevo.");
+            AudioEngine.playTone('error');
+        }
+    }
+};
+
+// --- LÓGICA ESPECÍFICA DE PANTALLAS ---
+
+function startGame() {
+    const name = document.getElementById('agent-name').value;
+    if (name.trim() === "") {
+        GameEngine.showToast("Identifícate, Agente.");
+        return;
+    }
+    CourseState.userName = name;
+    GameEngine.navigate('intro');
+    GameEngine.addXP(10, "Agente Registrado");
+}
+
+// Drag & Drop Logic
+const draggables = document.querySelectorAll('.draggable');
+const dropZones = document.querySelectorAll('.drop-zone');
+let draggedId = null;
+
+draggables.forEach(draggable => {
+    draggable.addEventListener('dragstart', () => {
+        draggedId = draggable.getAttribute('data-id');
+        draggable.style.opacity = '0.5';
+    });
+    draggable.addEventListener('dragend', () => {
+        draggable.style.opacity = '1';
+    });
+});
+
+dropZones.forEach(zone => {
+    zone.addEventListener('dragover', e => e.preventDefault());
+    zone.addEventListener('drop', () => {
+        const match = zone.getAttribute('data-match');
+        if (draggedId === match) {
+            zone.classList.add('correct');
+            zone.innerHTML += " ✅";
+            GameEngine.addXP(15, "Enlace Neuronal Correcto");
+            AudioEngine.playTone('success');
+            checkActivationComplete();
+        } else {
+            zone.classList.add('incorrect');
+            AudioEngine.playTone('error');
+            setTimeout(() => zone.classList.remove('incorrect'), 1000);
+        }
+    });
+});
+
+function checkActivationComplete() {
+    const correct = document.querySelectorAll('.drop-zone.correct').length;
+    if (correct === 3) {
+        document.getElementById('btn-act-next').style.opacity = '1';
+        document.getElementById('btn-act-next').style.pointerEvents = 'all';
+    }
+}
+
+// --- YOUTUBE VIDEO QUIZ LOGIC ---
+let player;
+let videoTimer;
+const quizPoints = [
+    { time: 60, asked: false, q: "¿Qué es una NC?", opt: ["Error Humano", "Incumplimiento de Requisito", "Falla Maquinaria"], ans: 1 },
+    { time: 150, asked: false, q: "¿Cuáles son los 3 escenarios?", opt: ["Intención, Implantación, Eficacia", "Inicio, Nudo, Desenlace", "Planear, Hacer, Verificar"], ans: 0 },
+    { time: 270, asked: false, q: "¿Cuál es la pregunta clave del auditor?", opt: ["¿Quién fue?", "¿Por qué?", "¿Y qué?"], ans: 2 },
+    { time: 360, asked: false, q: "Partes del INC: Declaración, ____, Requisito", opt: ["Culpable", "Evidencia", "Solución"], ans: 1 },
+    { time: 420, asked: false, q: "La evidencia debe ser:", opt: ["Subjetiva", "Objetiva y Trazable", "Un rumor"], ans: 1 }
+];
+
+function loadYouTubeAPI() {
+    const tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+}
+
+function onYouTubeIframeAPIReady() {
+    player = new YT.Player('player', {
+        height: '100%',
+        width: '100%',
+        videoId: 'YO4-Ze3IIkU', // ID Proporcionado
+        playerVars: { 'controls': 0, 'rel': 0 },
+        events: {
+            'onStateChange': onPlayerStateChange
+        }
+    });
+}
+
+function onPlayerStateChange(event) {
+    if (event.data == YT.PlayerState.PLAYING) {
+        videoTimer = setInterval(checkQuizTime, 1000);
+    } else {
+        clearInterval(videoTimer);
+    }
+}
+
+function checkQuizTime() {
+    const currentTime = player.getCurrentTime();
+    const quiz = quizPoints.find(p => !p.asked && currentTime > p.time);
+    
+    if (quiz) {
+        player.pauseVideo();
+        showQuizOverlay(quiz);
+    }
+}
+
+function showQuizOverlay(quiz) {
+    const overlay = document.getElementById('quiz-overlay');
+    document.getElementById('vq-question').innerText = quiz.q;
+    const optsDiv = document.getElementById('vq-options');
+    optsDiv.innerHTML = "";
+    
+    quiz.opt.forEach((opt, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-neon';
+        btn.innerText = opt;
+        btn.onclick = () => {
+            if (index === quiz.ans) {
+                GameEngine.addXP(20, "Respuesta Correcta");
+                quiz.asked = true;
+                overlay.style.display = 'none';
+                player.playVideo();
+            } else {
+                AudioEngine.playTone('error');
+                GameEngine.showToast("Incorrecto. Analiza de nuevo.");
+            }
+        };
+        optsDiv.appendChild(btn);
+    });
+    
+    overlay.style.display = 'flex';
+}
+
+// --- BOSS BATTLE LOGIC ---
+const bossQuestions = [
+    { q: "¿Una No Conformidad es igual a un Defecto?", a: false },
+    { q: "¿La falta de intención es un problema de diseño?", a: true },
+    { q: "¿La evidencia puede basarse en opiniones?", a: false },
+    { q: "¿El INC debe incluir declaración, evidencia y requisito?", a: true },
+    { q: "¿El auditor debe actuar como un policía?", a: false },
+    { q: "¿La pregunta '¿Y qué?' busca el impacto en el negocio?", a: true }
+];
+
+function loadBossBattle() {
+    const container = document.getElementById('boss-question-area');
+    container.innerHTML = "<h2>EVALUACIÓN FINAL</h2>";
+    
+    let currentQ = 0;
+    let score = 0;
+    
+    function showQ() {
+        if (currentQ >= bossQuestions.length) {
+            finishBoss(score);
+            return;
+        }
+        const qData = bossQuestions[currentQ];
+        container.innerHTML = `
+            <h3 style="font-size: 1.5rem; margin-bottom: 20px;">${qData.q}</h3>
+            <button class="btn-neon" onclick="bossAnswer(true, ${qData.a})">VERDADERO</button>
+            <button class="btn-neon secondary" onclick="bossAnswer(false, ${qData.a})" style="margin-left: 20px;">FALSO</button>
+        `;
+    }
+    
+    window.bossAnswer = function(userVal, correctVal) {
+        if (userVal === correctVal) score++;
+        currentQ++;
+        showQ();
+    };
+    
+    showQ();
+}
+
+function finishBoss(score) {
+    if (score >= 4) { // Pass
+        GameEngine.addXP(100, "JEFE DERROTADO");
+        document.getElementById('cert-name').innerText = CourseState.userName;
+        document.getElementById('cert-xp').innerText = CourseState.totalXP;
+        GameEngine.navigate('hero');
+        GameEngine.triggerLootBox();
+    } else {
+        GameEngine.showToast("Fallaste. Intenta de nuevo.");
+        GameEngine.navigate('gamemap');
+    }
+}
+
+// Hook boss load
+const originalNavigate = GameEngine.navigate;
+GameEngine.navigate = function(screenId) {
+    originalNavigate.call(GameEngine, screenId);
+    if (screenId === 'boss') loadBossBattle();
+};
+
+// Init
+GameEngine.init();
+
+</script>
+</body>
+</html>
